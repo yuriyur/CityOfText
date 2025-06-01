@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gibson Supercomputer Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #0a0;
+            overflow-x: hidden;
+            min-height: calc(100vh + 1500px);
+        }
+        
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+        
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 20, 19, 0.7);
+            border: 1px solid #6ec9fe;
+            padding: 15px;
+            z-index: 100;
+            max-width: 400px;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: 0 0 15px rgba(0, 238, 255, 0.3);
+            z-index: 200;
+            animation: fadeInOut 5s infinite;
+            pointer-events: none;
+        }
+        
+        .info-panel h2 {
+            color: #6ec9fe;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 0 5px #6ec9fe;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+        
+        .info-panel p {
+            margin-bottom: 10px;
+            color: #6ec9fe;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            color: #6ec9fe;
+            text-align: right;
+            background: rgba(0, 20, 0, 0.5);
+            padding: 8px 12px;
+            border: 1px solid #6ec9fe;
+            font-size: 14px;
+            z-index: 200;
+            animation: fadeInOut 5s infinite;
+            pointer-events: none;
+        }
+        
+        .glitch {
+            animation: glitch-effect 3s infinite;
+        }
+        
+        @keyframes glitch-effect {
+            0%, 100% { text-shadow: 0 0 5px #6ec9fe; }
+            25% { transform: translate(-2px, 1px); text-shadow: -2px 0 0 #f0f, 2px 0 0 #0ff; }
+            75% { transform: translate(1px, -1px); text-shadow: 1px 0 0 #ff0, -1px 0 0 #f00; }
+        }
+        
+        #contact {
+            position: absolute;
+            top: calc(100vh + 1500px);
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            color: #6ec9fe;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .contact-container {
+            background: rgba(0, 20, 0, 0.7);
+            border: 1px solid #6ec9fe;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        }
+        
+        .contact-title {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #6ec9fe;
+            text-shadow: 0 0 5px #6ec9fe;
+            letter-spacing: 2px;
+        }
+        
+        .email-link {
+            color: #0f0;
+            font-size: 24px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 20px 0;
+            padding: 10px 20px;
+            border: 1px solid #0f0;
+            transition: all 0.3s ease;
+            background: rgba(0, 30, 0, 0.5);
+        }
+        
+        .email-link:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .contact-message {
+            margin-top: 30px;
+            line-height: 1.6;
+            color: #0a0;
+        }
+        
+        .text-columns {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .text-column {
+            width: 14%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .text-stream {
+            position: absolute;
+            width: 100%;
+            animation: text-scroll linear infinite;
+            color: rgba(0, 255, 0, 0.15);
+            font-size: 14px;
+            line-height: 1.4;
+            font-family: 'Courier New', monospace;
+            text-align: justify;
+            text-transform: uppercase;
+            user-select: none;
+        }
+        
+        @keyframes text-scroll {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        
+        @media (max-width: 768px) {
+            .info-panel {
+                max-width: 300px;
+                font-size: 12px;
+            }
+            
+            .controls {
+                font-size: 12px;
+                padding: 5px 8px;
+            }
+            
+            .contact-title {
+                font-size: 22px;
+            }
+            
+            .email-link {
+                font-size: 18px;
+            }
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #6ec9fe;
+            font-size: 14px;
+            z-index: 100;
+            background: rgba(0, 20, 0, 0.5);
+            padding: 8px 12px;
+            border: 1px solid #6ec9fe;
+            border-radius: 3px;
+        }
+        
+        .scroll-indicator span {
+            color: #ff0;
+            font-weight: bold;
+        }
+        
+        .hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #6ec9fe;
+            font-size: 18px;
+            text-align: center;
+            background: rgba(0, 20, 0, 0.7);
+            padding: 15px 25px;
+            border: 1px solid #6ec9fe;
+            z-index: 200;
+            animation: fadeInOut 5s infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="scene-container"></div>
+    <div class="info-panel">
+        <h2 class="glitch">GIBSON SUPERCOMPUTER INTERFACE</h2>
+        <p>/// SECURITY LEVEL: MAXIMUM</p>
+        <p>/// ACCESS: ROOT PRIVILEGES</p>
+        <p>▌ TARGET FILE: <span class="glitch">GARBAGE.EXE</span> [ENCRYPTED]</p>
+        <p>▌ USE MOUSE TO NAVIGATE DATACITY STRUCTURE</p>
+        <p>▌ SCROLL WHEEL TO ORBIT CENTRAL TOWER</p>
+    </div>
+    <div class="controls">
+        <div>DEPTH: <span id="depth-value">0</span> UNITS</div>
+        <div>OBJECTS: <span id="objects-count">0</span></div>
+        <div>STATUS: <span style="color: #0f0;">ONLINE</span></div>
+    </div>
+    <div class="scroll-indicator">
+        SCROLL PROGRESS: <span id="scroll-percent">0%</span>
+    </div>
+    <div class="hint">
+        USE SCROLL WHEEL
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('scene-container');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000511);
+            scene.fog = new THREE.Fog(0x000511, 50, 300);
+            
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 0, 50);
+            
+            const renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+            
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.5;
+            controls.keys = { LEFT: 'KeyA', UP: 'KeyW', RIGHT: 'KeyD', BOTTOM: 'KeyS' };
+            
+            const gridSize = 15;
+            const spacing = 15;
+            const towers = [];
+            const towerHeight = 30;
+            
+            const floorLines = [];
+            const mainLineThickness = 0.8;
+            const centerLineThickness = 1.5;
+            
+            for (let i = 0; i <= gridSize; i++) {
+                const z = (i - gridSize/2) * spacing;
+                const points = [];
+                points.push(new THREE.Vector3(-gridSize * spacing / 2, -5, z));
+                points.push(new THREE.Vector3(gridSize * spacing / 2, -5, z));
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                
+                const isCenter = (i === Math.floor(gridSize/2));
+                const thickness = isCenter ? centerLineThickness : mainLineThickness;
+                const color = isCenter ? 0x5244cc : 0x42399c;
+                
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: thickness
+                });
+                
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+                floorLines.push(line);
+            }
+            
+            for (let i = 0; i <= gridSize; i++) {
+                const x = (i - gridSize/2) * spacing;
+                const points = [];
+                points.push(new THREE.Vector3(x, -5, -gridSize * spacing / 2));
+                points.push(new THREE.Vector3(x, -5, gridSize * spacing / 2));
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                
+                const isCenter = (i === Math.floor(gridSize/2));
+                const thickness = isCenter ? centerLineThickness : mainLineThickness;
+                const color = isCenter ? 0x5244cc : 0x42399c;
+                
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: thickness
+                });
+                
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+                floorLines.push(line);
+            }
+            
+            const hackerTerms = [
+                "ENCRYPTION", "DECRYPTION", "FIREWALL", "BACKDOOR", "EXPLOIT",
+                "VULNERABILITY", "PAYLOAD", "ROOTKIT", "MALWARE", "PHISHING",
+                "SPOOFING", "SNIFFER", "KEYLOGGER", "ZOMBIE", "BOTNET", "DDoS",
+                "RANSOMWARE", "ZERO-DAY", "BRUTEFORCE", "HONEYPOT", "MAINFRAME",
+                "PROXY", "TOR", "V01D", "AES", "RSA", "SSL", "SSH", "FTP", "HTTP",
+                "PROTOCOL", "DATABASE", "SERVER", "CLIENT", "PACKET", "ROUTER",
+                "SWITCH", "GATEWAY", "IP_ADDRESS", "MAC_ADDRESS", "DNS", "DHCP",
+                "SUBNET", "CACHE", "BUFFER", "KERNEL", "SHELL", "TERMINAL",
+                "WARNING", "INTRUSION", "DETECTION", "SYSTEM", "ACTIVATED", "EVASION", "PROTOCOL", "INITIATED", 
+                "SPOOFING", "MAC", "ADDRESS", "CLONING IP", "ROUTING", "BYPASSING", "SECURITY", 
+                "FIREWALL", "PENETRATED", "ACCESSING", "CORE SYSTEM", "LOCATING",
+                "FILE SIZE", "ENCRYPTION", "DOWNLOADING",
+                "DOWNLOAD", "COMPLETE", "DISCONNECTING", "COVERING", "TRACES", "OPERATION", "SUCCESSFUL",
+                "SATELLITE", "LINK", "ESTABLISHED", "ENCRYPTION", "LAYER 7", "PROTOCOL", "ANALYSIS",
+                "DATA STREAM", "INTERCEPTED", "DECRYPTING", "CIPHER", "BREACH", "DETECTED",
+                "COUNTERMEASURES", "ACTIVE", "RE-ROUTING", "DATA", "EVASION", "SUCCESSFUL"
+            ];
+            
+            const drawStaticText = (context) => {
+                context.fillStyle = '#001122';
+                context.fillRect(0, 0, 512, 4096);
+                
+                context.font = 'bold 12px Courier New';
+                context.fillStyle = '#3680d6';
+                context.textAlign = 'left';
+                
+                const columnWidth = 512 / 6;
+                for (let col = 0; col < 6; col++) {
+                    const x = col * columnWidth;
+                    
+                    for (let k = 0; k < 250; k++) {
+                        if (Math.random() < 0.3) continue;
+                        
+                        const term = hackerTerms[Math.floor(Math.random() * hackerTerms.length)];
+                        const yPos = 10 + k * 16;
+                        
+                        if (Math.random() > 0.3) {
+                            context.fillText(term, x + 5, yPos);
+                        } else {
+                            const binary = Array.from({length: 8}, () => Math.floor(Math.random() * 2)).join('');
+                            context.fillText(binary, x + 5, yPos);
+                        }
+                    }
+                }
+            };
+            
+            const createStaticTexture = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 4096;
+                const context = canvas.getContext('2d');
+                drawStaticText(context);
+                return new THREE.CanvasTexture(canvas);
+            };
+
+            function getEmail() {
+                const encodingFactor = 3;
+                const encodedEmail = "fjmel_f^=j^fi+or"
+                const decodedEmail = encodedEmail
+                    .split('')
+                    .map(char => String.fromCharCode(char.charCodeAt(0) + encodingFactor))
+                    .join('')
+                return decodedEmail
+            }
+
+            const createCenterTexture = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 4096;
+                const context = canvas.getContext('2d');
+                
+                drawStaticText(context);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                
+                let frameCount = 0;
+                let emailVisible = true;
+                
+                const update = () => {
+                    if (frameCount % 60 === 0) {
+                        emailVisible = !emailVisible;
+                        
+                        context.fillStyle = '#001122';
+                        context.fillRect(0, 2272, 260, 30);
+                        
+                        if (emailVisible) {
+                            context.font = 'bold 16px Courier New';
+                            context.fillStyle = '#ffff00';
+                            context.textAlign = 'center';
+                            context.fillText(getEmail(), 128, 2282);
+                        }
+                        
+                        texture.needsUpdate = true;
+                    }
+                    frameCount++;
+                };
+                
+                return { texture, update };
+            };
+            
+            const staticTextures = [];
+            for (let i = 0; i < 4; i++) {
+                staticTextures.push(createStaticTexture());
+            }
+            
+            const centerTextures = [];
+            for (let i = 0; i < 4; i++) {
+                centerTextures.push(createCenterTexture());
+            }
+            
+            const staticTopBottomTexture = createStaticTexture();
+            
+            const centerX = Math.floor(gridSize / 2);
+            const centerZ = Math.floor(gridSize / 2);
+            let targetTower = null;
+            
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const geometry = new THREE.BoxGeometry(4, towerHeight, 4);
+                    
+                    const isCenter = (i === centerX && j === centerZ);
+                    
+                    const materials = [
+                        new THREE.MeshBasicMaterial({ 
+                            map: isCenter ? centerTextures[0].texture : staticTextures[0], 
+                            transparent: true,
+                            opacity: 0.7
+                        }),
+                        new THREE.MeshBasicMaterial({ 
+                            map: isCenter ? centerTextures[1].texture : staticTextures[1], 
+                            transparent: true,
+                            opacity: 0.7
+                        }),
+                        new THREE.MeshBasicMaterial({ 
+                            map: isCenter ? centerTextures[2].texture : staticTextures[2], 
+                            transparent: true,
+                            opacity: 0.7
+                        }),
+                        new THREE.MeshBasicMaterial({ 
+                            map: isCenter ? centerTextures[3].texture : staticTextures[3], 
+                            transparent: true,
+                            opacity: 0.7
+                        }),
+                        new THREE.MeshBasicMaterial({ 
+                            map: staticTopBottomTexture, 
+                            transparent: true,
+                            opacity: 0.7
+                        }),
+                        new THREE.MeshBasicMaterial({ 
+                            map: staticTopBottomTexture, 
+                            transparent: true,
+                            opacity: 0.7
+                        })
+                    ];
+                    
+                    const tower = new THREE.Mesh(geometry, materials);
+                    
+                    tower.position.x = (i - gridSize/2) * spacing;
+                    tower.position.y = towerHeight/2 - 5;
+                    tower.position.z = (j - gridSize/2) * spacing;
+                    
+                    if (isCenter) {
+                        targetTower = tower;
+                    }
+                    
+                    scene.add(tower);
+                    towers.push(tower);
+                }
+            }
+            
+            const pulsePoints = [];
+            const pulseMaterial = new THREE.LineBasicMaterial({ 
+                color: 0x42399c,
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            for (let i = 0; i < 20; i++) {
+                const z = (Math.random() - 0.5) * gridSize * spacing;
+                const points = [];
+                points.push(new THREE.Vector3(-gridSize * spacing / 2, -4.7, z));
+                points.push(new THREE.Vector3(gridSize * spacing / 2, -4.7, z));
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, pulseMaterial);
+                scene.add(line);
+                
+                pulsePoints.push({
+                    line: line,
+                    speed: 0.5 + Math.random() * 0.5,
+                    direction: 1,
+                    maxX: gridSize * spacing / 2,
+                    minX: -gridSize * spacing / 2,
+                    z: z
+                });
+            }
+            
+            for (let i = 0; i < 20; i++) {
+                const x = (Math.random() - 0.5) * gridSize * spacing;
+                const points = [];
+                points.push(new THREE.Vector3(x, -4.7, -gridSize * spacing / 2));
+                points.push(new THREE.Vector3(x, -4.7, gridSize * spacing / 2));
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, pulseMaterial);
+                scene.add(line);
+                
+                pulsePoints.push({
+                    line: line,
+                    speed: 0.5 + Math.random() * 0.5,
+                    direction: 1,
+                    maxZ: gridSize * spacing / 2,
+                    minZ: -gridSize * spacing / 2,
+                    x: x
+                });
+            }
+            
+            let scrollProgress = 0;
+            let targetScrollProgress = 0;
+            const maxScroll = 1500;
+            
+            document.addEventListener('wheel', (e) => {
+                targetScrollProgress = Math.max(0, Math.min(1, targetScrollProgress + e.deltaY * 0.0003));
+                document.getElementById('scroll-percent').textContent = Math.round(targetScrollProgress * 100) + '%';
+            });
+            
+            const calculateCameraPosition = (progress) => {
+                const spiralRadius = 50 - progress * 30;
+                const spiralHeight = progress * 20;
+                const spiralAngle = progress * Math.PI * 4;
+                
+                const wobbleX = Math.sin(progress * Math.PI * 10) * 12;
+                const wobbleY = Math.cos(progress * Math.PI * 5) * 8;
+                const wobbleZ = Math.sin(progress * Math.PI * 7) * 10;
+                
+                const x = spiralRadius * Math.sin(spiralAngle) + wobbleX;
+                const y = spiralHeight + wobbleY;
+                const z = spiralRadius * Math.cos(spiralAngle) + wobbleZ;
+                
+                const lookX = Math.sin(progress * Math.PI) * 8;
+                const lookY = 10 + Math.sin(progress * Math.PI * 2) * 5;
+                
+                return { position: new THREE.Vector3(x, y, z), lookAt: new THREE.Vector3(lookX, lookY, 0) };
+            };
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                
+                scrollProgress += (targetScrollProgress - scrollProgress) * 0.05;
+                
+                if (scrollProgress < 0.99) {
+                    const { position, lookAt } = calculateCameraPosition(scrollProgress);
+                    camera.position.lerp(position, 0.008);
+                    camera.lookAt(lookAt);
+                } else {
+                    const finalPosition = new THREE.Vector3(-2, 9, -7);
+                    camera.position.lerp(finalPosition, 0.05);
+                    controls.update();
+                    camera.lookAt(-90, 10, -5);
+                }
+                
+                centerTextures.forEach(t => t.update());
+                
+                pulsePoints.forEach(point => {
+                    if (point.z !== undefined) {
+                        let pos = point.line.geometry.attributes.position;
+                        pos.array[0] += point.speed * point.direction;
+                        pos.array[3] += point.speed * point.direction;
+                        
+                        if (pos.array[0] > point.maxX || pos.array[0] < point.minX) {
+                            point.direction *= -1;
+                        }
+                        
+                        pos.needsUpdate = true;
+                    } else {
+                        let pos = point.line.geometry.attributes.position;
+                        pos.array[2] += point.speed * point.direction;
+                        pos.array[5] += point.speed * point.direction;
+                        
+                        if (pos.array[2] > point.maxZ || pos.array[2] < point.minZ) {
+                            point.direction *= -1;
+                        }
+                        
+                        pos.needsUpdate = true;
+                    }
+                });
+                
+                document.getElementById('depth-value').textContent = Math.floor(camera.position.z);
+                document.getElementById('objects-count').textContent = towers.length;
+                
+                renderer.render(scene, camera);
+            };
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            animate();
+            
+            setTimeout(() => {
+                document.querySelector('.hint').style.display = 'none';
+                document.querySelector('.controls').style.display = 'none';
+                document.querySelector('.info-panel').style.display = 'none';
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
