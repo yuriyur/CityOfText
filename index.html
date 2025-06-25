@@ -6,6 +6,7 @@
     <title>Gibson Supercomputer Interface</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
     <style>
         * {
             margin: 0;
@@ -649,6 +650,32 @@
                 document.querySelector('.controls').style.display = 'none';
                 document.querySelector('.info-panel').style.display = 'none';
             }, 5000);
+
+            const floorGeometry = new THREE.PlaneGeometry(gridSize * spacing + 20, gridSize * spacing + 20);
+            const floorMaterial = new THREE.MeshStandardMaterial({
+                color: 0x050a12,
+                metalness: 0.95,
+                roughness: 0.05,
+                side: THREE.DoubleSide
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -5.11;
+            scene.add(floor);
+
+            const reflector = new THREE.Reflector(
+                floorGeometry,
+                {
+                    color: 0x222233,
+                    textureWidth: window.innerWidth * window.devicePixelRatio,
+                    textureHeight: window.innerHeight * window.devicePixelRatio,
+                    clipBias: 0.003,
+                    recursion: 1
+                }
+            );
+            reflector.rotation.x = -Math.PI / 2;
+            reflector.position.y = -5.01;
+            scene.add(reflector);
         });
     </script>
 </body>
